@@ -8,7 +8,9 @@ class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, nullable=False)
     threshold = db.Column(db.Float, nullable=False)
+    # active False indicates alert has already been triggered
     active = db.Column(db.Boolean, default=True)
+    # triggered_at is timestamp when alert was triggered
     triggered_at = db.Column(db.DateTime, nullable=True)
     # Use UTC timestamp on creation
     created_at = db.Column(

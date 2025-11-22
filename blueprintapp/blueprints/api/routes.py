@@ -1,122 +1,3 @@
-# from flask import Blueprint, request, jsonify
-# from blueprintapp.app import db
-# from blueprintapp.blueprints.api.models import Todo
-# from blueprintapp.blueprints.api.db_operations import (
-#     db_read_all_todos,
-#     db_read_todo_by_tid,
-#     db_delete_todo,
-#     db_create_new_todo_obj,
-#     db_update_todo,
-# )
-# from blueprintapp.blueprints.api.utilities import (
-#     valid_title_and_duedate,
-#     jsend_success,
-#     jsend_fail,
-# )
-
-
-# api = Blueprint("api", __name__, template_folder="templates")
-
-
-# # Get all todos
-# @api.route("/todos", methods=["GET"])
-# def get_todos():
-#     todos = db_read_all_todos()
-
-#     todos_list = [
-#         {
-#             "tid": todo.tid,
-#             "title": todo.title,
-#             "description": todo.description,
-#             "duedate": todo.duedate.isoformat(),
-#             "done": todo.done,
-#         }
-#         for todo in todos
-#     ]
-#     return jsend_success(data_key="todos", data_value=todos_list)
-
-
-# # Get a specific todo by id
-# @api.route("/todos/<int:tid>", methods=["GET"])
-# def get_todo(tid):
-#     todo = db_read_todo_by_tid(tid=tid)
-
-#     if todo == None:
-#         return jsend_fail(
-#             data_key="todo", data_value="Todo does not exist", status_code=404
-#         )
-
-#     todo_data = {
-#         "tid": todo.tid,
-#         "title": todo.title,
-#         "description": todo.description,
-#         "duedate": todo.duedate.isoformat(),
-#         "done": todo.done,
-#     }
-#     return jsend_success(data_key="todo", data_value=todo_data)
-
-
-# # Create new todo
-# @api.route("/todos", methods=["POST"])
-# def create_todo():
-#     data = request.get_json()
-#     response = valid_title_and_duedate(data=data)
-#     if type(response) is not dict:
-#         return response
-
-#     # Create the new todo object
-#     new_todo = Todo(
-#         title=response.get("title"),
-#         description=data.get("description"),
-#         duedate=response.get("duedate"),
-#         done=data.get("done", False),
-#     )
-#     # TODO dependency injection?
-#     db_create_new_todo_obj(todo=new_todo, db_session=db.session)
-#     # TODO success follow delete patern? Maybe returning newly created todo object in the response?
-#     return jsend_success(status_code=201)
-
-
-# # Update an existing todo
-# @api.route("/todos/<int:tid>", methods=["PUT"])
-# def update_todo(tid):
-#     # todo = db_read_todo_by_tid_or_404(tid=tid)
-#     todo = db_read_todo_by_tid(tid=tid)
-
-#     if todo == None:
-#         return jsend_fail(
-#             data_key="todo", data_value="Todo does not exist", status_code=404
-#         )
-
-#     data = request.get_json()
-#     response = valid_title_and_duedate(data=data)
-#     if type(response) is not dict:
-#         return response
-
-#     db_update_todo(
-#         todo=todo,
-#         title=response.get("title"),
-#         description=data.get("description"),
-#         duedate=response.get("duedate"),
-#         done=data.get("done"),
-#     )
-#     # TODO should update follow delete patern?
-#     return jsend_success()
-
-
-# # Delete an existing todo
-# @api.route("/todos/<int:tid>", methods=["DELETE"])
-# def delete_todo(tid):
-#     todo = db_read_todo_by_tid(tid=tid)
-
-#     if todo == None:
-#         return jsend_fail(
-#             data_key="todo", data_value="Todo does not exist", status_code=404
-#         )
-
-#     db_delete_todo(todo=todo)
-#     return jsend_success()
-
 from flask import Blueprint, request
 from blueprintapp.blueprints.api.db_operations import (
     db_get_all_alerts,
@@ -194,21 +75,17 @@ def update_alert(alert_id: int):
     a = db_get_alert_by_id(alert_id)
     if a is None:
         return jsend_fail("alert", "Alert does not exist", status_code=404)
-
     data = request.get_json() or {}
-    email = data.get("email")
-    threshold = data.get("threshold")
+
+    # Use the same validation helper as create; in update we allow partial
+    # validation so callers can PATCH/PUT with a subset of fields.
+    result = validate_alert(data, partial=True)
+    if not isinstance(result, dict):
+        return result
+
+    email = result.get("email") if "email" in result else None
+    threshold = result.get("threshold") if "threshold" in result else None
     active = data.get("active")
-
-    # basic validation
-    if threshold is not None:
-        try:
-            threshold = float(threshold)
-        except (ValueError, TypeError):
-            return jsend_fail("threshold", "threshold must be a number")
-
-    if email is not None and not str(email).strip():
-        return jsend_fail("email", "email must be a non-empty string")
 
     updated = db_update_alert(a, email=email, threshold=threshold, active=active)
 

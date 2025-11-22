@@ -1,8 +1,5 @@
 from flask import jsonify, Response
 from typing import Union
-from blueprintapp.utilities.validators import validate_title, validate_duedate
-from wtforms import ValidationError
-from datetime import datetime
 
 
 def jsend_success(
@@ -49,71 +46,49 @@ def jsend_fail(data_key: str, data_value: str, status_code: int = 400) -> Respon
     return jsonify({"status": "fail", "data": {data_key: data_value}}), status_code
 
 
-def jsend_error() -> Response:
-    # TODO integrate errors?
-    pass
+# def jsend_error() -> Response:
+#     # TODO integrate errors?
+#     pass
 
 
-# def valid_title_and_duedate(data) -> Union[dict, Response]:
-#     """
-#     Validates the 'title' and 'duedate' fields from the provided data.
+def validate_alert(data, partial: bool = False) -> Union[dict, Response]:
+    """
+    Validate alert payload.
 
-#     Args:
-#         data (dict): A dictionary containing the 'title' and 'duedate' fields to validate.
+    If `partial` is False (used for create/PUT semantics) both `email` and
+    `threshold` are required. If `partial` is True (PATCH-like semantics) the
+    function will validate only the fields that are present and return a dict
+    with the normalized values.
 
-#     Returns:
-#         Union[dict, Response]:
-#             - If validation succeeds, returns a dictionary with 'title' and 'duedate'.
-#             - If validation fails, returns a JSend 'fail' response indicating the validation error.
+    Returns either a dict with validated fields or a JSend `fail` Response.
+    """
+    email = data.get("email") if data is not None else None
+    threshold = data.get("threshold") if data is not None else None
 
-#     Validation Steps:
-#         - 'title' must be present and not consist solely of numbers.
-#         - 'duedate' must be present, in ISO format, and cannot be in the past.
-#     """
-#     title = data.get("title")
-#     # title must be provided in the request
-#     if not title:
-#         return jsend_fail(data_key="title", data_value="title is required")
-#     # title must not be comprised of only numbers
-#     try:
-#         validate_title(title)
-#     except ValidationError as e:
-#         return jsend_fail(data_key="title", data_value=f"{str(e)}")
+    validated: dict = {}
 
-#     duedate_str = data.get("duedate")
-#     # duedate must be provided in the request
-#     if not duedate_str:
-#         return jsend_fail(data_key="duedate", data_value="duedate is required")
-#     # duedate must not be in the past and in valid date format
-#     try:
-#         duedate = datetime.fromisoformat(duedate_str).date()
-#         validate_duedate(duedate)
-#     except ValueError:
-#         return jsend_fail(
-#             data_key="duedate", data_value="due date must be a valid ISO format date"
-#         )
-#     except ValidationError as e:
-#         return jsend_fail(data_key="duedate", data_value=f"{str(e)}")
+    # For full validation (create / non-partial), require presence
+    if not partial:
+        if not email:
+            return jsend_fail(data_key="email", data_value="email is required")
+        if threshold is None:
+            return jsend_fail(data_key="threshold", data_value="threshold is required")
 
-#     return {"title": title, "duedate": duedate}
+    # If email is provided, validate it's a non-empty string
+    if email is not None:
+        if not str(email).strip():
+            return jsend_fail(
+                data_key="email", data_value="email must be a non-empty string"
+            )
+        validated["email"] = str(email).strip()
 
+    # If threshold is provided, validate numeric
+    if threshold is not None:
+        try:
+            validated["threshold"] = float(threshold)
+        except (ValueError, TypeError):
+            return jsend_fail(
+                data_key="threshold", data_value="threshold must be a number"
+            )
 
-# from blueprintapp.blueprints.api.utilities import jsend_fail
-
-
-def validate_alert(data):
-    email = data.get("email")
-    threshold = data.get("threshold")
-
-    if not email:
-        return jsend_fail("email", "email is required")
-
-    if threshold is None:
-        return jsend_fail("threshold", "threshold is required")
-
-    try:
-        threshold = float(threshold)
-    except ValueError:
-        return jsend_fail("threshold", "threshold must be a number")
-
-    return {"email": email, "threshold": threshold}
+    return validated
