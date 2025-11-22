@@ -3,7 +3,7 @@ import json
 
 def test_update_alert_correct_attributes(client, init_database):
     updated = {"threshold": 99999}
-    response = client.put(
+    response = client.patch(
         "/api/alerts/1", data=json.dumps(updated), content_type="application/json"
     )
     assert response.status_code == 200
@@ -14,7 +14,7 @@ def test_update_alert_correct_attributes(client, init_database):
 
 def test_update_nonexistent_alert(client):
     updated = {"threshold": 50000}
-    response = client.put(
+    response = client.patch(
         "/api/alerts/999", data=json.dumps(updated), content_type="application/json"
     )
     assert response.status_code == 404
@@ -24,7 +24,7 @@ def test_update_nonexistent_alert(client):
 
 def test_update_alert_invalid_threshold(client, init_database):
     updated = {"threshold": "nope"}
-    response = client.put(
+    response = client.patch(
         "/api/alerts/1", data=json.dumps(updated), content_type="application/json"
     )
     assert response.status_code == 400
