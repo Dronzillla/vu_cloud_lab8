@@ -62,6 +62,12 @@ def validate_alert(data, partial: bool = False) -> Union[dict, Response]:
 
     Returns either a dict with validated fields or a JSend `fail` Response.
     """
+    if data is None:
+        return jsend_fail(
+            data_key="json",
+            data_value="Malformed or missing JSON payload",
+        )
+
     email = data.get("email") if data is not None else None
     threshold = data.get("threshold") if data is not None else None
 
@@ -85,7 +91,12 @@ def validate_alert(data, partial: bool = False) -> Union[dict, Response]:
     # If threshold is provided, validate numeric
     if threshold is not None:
         try:
-            validated["threshold"] = float(threshold)
+            threshold_float = float(threshold)
+            if threshold_float < 0:
+                return jsend_fail(
+                    data_key="threshold", data_value="threshold must be >= 0"
+                )
+            validated["threshold"] = threshold_float
         except (ValueError, TypeError):
             return jsend_fail(
                 data_key="threshold", data_value="threshold must be a number"

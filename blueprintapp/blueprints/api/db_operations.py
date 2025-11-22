@@ -2,18 +2,19 @@ from blueprintapp.app import db
 from blueprintapp.blueprints.api.models import Alert
 
 
-def db_get_all_alerts(active_only=False) -> list[Alert]:
+def db_get_all_alerts(active_only=None) -> list[Alert]:
     """Read all 'Alert' records in database.
 
     Args:
-        active_only (bool, optional): Filter to return only active alerts. Defaults to False.
-
+        active_only (bool | None, optional): Filter to return only active/not active/all alerts. Defaults to None.
     Returns:
         list[Alert]: list of 'Alert' objects, that were uploaded in database.
     """
     query = Alert.query
-    if active_only:
+    if active_only is True:
         query = query.filter_by(active=True)
+    elif active_only is False:
+        query = query.filter_by(active=False)
     return query.all()
 
 
