@@ -27,13 +27,9 @@ def create_app(config_class="config.config.DevelopmentConfig"):
     # docker-compose ps
     # docker-compose up -d
 
-    # To create db go to main folder/blueprintapp folder where app.py is
+    # To create db go to the folder /blueprintapp where app.py is
     # flask db init
     # flask db migrate
     # flask db upgrade
-
-    # Option without database migrations
-    # with app.app_context():
-    #     db.create_all()
 
     return app
