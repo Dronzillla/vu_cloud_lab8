@@ -124,15 +124,19 @@ def update_alert(alert_id: int):
     active = data.get("active")
 
     # Another logic with triggered_at
-    # old_active = alert.active
-    # new_active = data.get("active")
-    # triggered_at = None
-    # # Only set triggered_at when transitioning from active → inactive
-    # if old_active is True and new_active is False:
-    #     triggered_at = datetime.now(timezone.utc)
+    old_active = alert.active
+    new_active = data.get("active")
+    triggered_at = None
+    # Only set triggered_at when transitioning from active → inactive
+    if old_active is True and new_active is False:
+        triggered_at = datetime.now(timezone.utc)
 
     updated = db_update_alert(
-        alert=alert, email=email, threshold=threshold, active=active
+        alert=alert,
+        email=email,
+        threshold=threshold,
+        active=active,
+        triggered_at=triggered_at,
     )
 
     alert_data = {
