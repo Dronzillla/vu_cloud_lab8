@@ -11,24 +11,19 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    # Development DB from env variable
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL", "postgresql://postgres:example@localhost:5432/alerts-db"
-    )
+    # Use SQLite by default, allow override via env
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///alerts_dev.db")
 
 
 class ProductionConfig(Config):
     DEBUG = False
-    # Default option for retrieving DB URI
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    # Use SQLite by default, allow override via env (e.g. Postgres on server)
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///alerts_prod.db")
 
 
 class TestingConfig(Config):
     TESTING = True
-    # Separate database for testing
-    # Prefer TEST_DATABASE_URL (for CI or Postgres-based tests). If not set,
-    # fall back to a fast in-memory SQLite database so tests run locally
-    # without requiring Postgres.
+    # Prefer TEST_DATABASE_URL (CI), otherwise in-memory SQLite
     SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URL") or "sqlite:///:memory:"
     WTF_CSRF_ENABLED = False
     SERVER_NAME = "127.0.0.1:5000"

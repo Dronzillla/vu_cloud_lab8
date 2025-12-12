@@ -1,6 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate, upgrade
+
+# Option with DB migrations
+# from flask_migrate import Migrate, upgrade
 
 
 db = SQLAlchemy()
@@ -18,16 +20,22 @@ def create_app(config_class="config.config.DevelopmentConfig"):
     # Register the alerts API at /api
     app.register_blueprint(alerts, url_prefix="/api")
 
-    migrate = Migrate(app, db)
+    # Option with database migrations
+    # migrate = Migrate(app, db)
 
     # Locally run 'docker-compose up-d' command to run postgre from docker file
     # docker-compose down -v
     # docker-compose ps
     # docker-compose up -d
 
+    # Option with database migrations
     # To create db go to the folder /blueprintapp where app.py is
     # flask db init
     # flask db migrate
     # flask db upgrade
+
+    # Option without database migrations
+    with app.app_context():
+        db.create_all()
 
     return app
