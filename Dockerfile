@@ -1,20 +1,18 @@
-# Use a slim Python image
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
 WORKDIR /app
-
-# system deps for psycopg2, build
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential gcc libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# run migrations at start (optional) then start gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "run:app", "--workers", "2"]
+# Create writable directory for SQLite
+RUN mkdir -p /app/instance && chmod 777 /app/instance
+
+EXPOSE 5000
+
+# Set database path to writable location (note: 4 slashes for absolute path)
+ENV DATABASE_URL=sqlite:////app/instance/alerts.db
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "run:flask_app", "--workers", "1"]
